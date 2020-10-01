@@ -1,0 +1,10 @@
+node_modules/
+.vs/
+bin/
+obj/
+package-lock.json
+*.user
+
+
+WebHitTest/app/**/*.js
+WebHitTest/app/**/*.map
