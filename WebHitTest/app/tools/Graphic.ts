@@ -1,6 +1,9 @@
-﻿import Point from "../Point"
-import Viewport from "../Viewport"
+﻿import Point from "../tools/Point"
+import Viewport from "../tools/Viewport"
 import Colors from "./Colors"
+import LineBuilder from './LineBuilder'
+import PolygonBuilder from './PolygonBuilder'
+import Shape from './Shape'
 export default class Graphic {
 
   private ctx: CanvasRenderingContext2D
@@ -9,25 +12,50 @@ export default class Graphic {
 
   constructor(canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext("2d") as CanvasRenderingContext2D
+    this.ctx.imageSmoothingEnabled = true
     this._viewport = new Viewport(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
   }
 
   strokePolygon(points: Point[]) {
-    this.drawPolygon(points);
-    this.ctx.stroke()
+    const polygon = this.drawPolygon(points);
+    this.ctx.strokeStyle = Colors.ForegroundColor
+    this.ctx.stroke(polygon)
   }
 
   fillPolygon(points: Point[]) {
-    this.drawPolygon(points);
+    const polygon = this.drawPolygon(points);
     this.ctx.fillStyle = Colors.PolygonSelectedColor
-    this.ctx.fill()
+    this.ctx.fill(polygon)
   }
 
-  clear() {
+  drawShape(shape: Shape) {
+    if (shape.polygon) {
+      this.strokePolygon(shape.polygon)
+    }
+  }
+
+  drawPath(points: Point[]) {
+    
+    var path = new PolygonBuilder()
+      .addPointBulk(points, this._viewport.center)
+      .build()
+
+    this.ctx.strokeStyle = Colors.TempColor
+    this.ctx.setLineDash([5, 4])
+    this.ctx.stroke(path)
+    this.ctx.setLineDash([])
+  }
+
+  clear(shapes: Shape[] = null) {
     this.ctx.fillStyle = Colors.BackgroundColor
     this.ctx.fillRect(0, 0, this._viewport.width, this._viewport.height)
     this.drawCrossBackground()
     this.drawCoordCross()
+    if (shapes) {
+      for (var i = 0; i < shapes.length; i++) {
+        this.drawShape(shapes[i])
+      }
+    }
   }
 
   private drawCoordCross() {
@@ -62,32 +90,19 @@ export default class Graphic {
       throw new Error("ArgumentNullException:strokePolygon.points")
     if (points.length < 3)
       throw new Error("Through less than 3 points impossible to create polygon")
-
-    const startPoint = points[0];
-    const ctx = this.ctx;
-    const viewport = this._viewport
-
-    ctx.beginPath()
-    ctx.moveTo(viewport.center.x + startPoint.x, viewport.center.y - startPoint.y)
-    ctx.strokeStyle = Colors.ForegroundColor
-
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(viewport.center.x + points[i].x, viewport.center.y - points[i].y)
-    }
-
-    ctx.closePath()
     
+    return new PolygonBuilder(true)
+      .addPointBulk(points, this._viewport.center)
+      .build()
   }
 
   private drawLine(p1: Point, p2: Point, color: string) {
-    const ctx = this.ctx;
-    const viewport = this._viewport
-    ctx.strokeStyle = color
-    ctx.beginPath()
-    ctx.moveTo(viewport.center.x + p1.x, viewport.center.y - p1.y)
-    ctx.lineTo(viewport.center.x + p2.x, viewport.center.y - p2.y)
-    ctx.closePath()
-    ctx.stroke()
+    const line = new LineBuilder()
+      .addPointBulk([p1, p2], this._viewport.center)
+      .build()
+    
+    this.ctx.strokeStyle = color
+    this.ctx.stroke(line)
   }
 
   private drawText(text: string, p: Point) {

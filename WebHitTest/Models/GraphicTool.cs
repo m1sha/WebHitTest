@@ -11,7 +11,7 @@ namespace WebHitTest.Models
         /// <param name="polygon">the vertices of polygon</param>
         /// <param name="point">the given point</param>
         /// <returns>true if the point is inside the polygon; otherwise, false</returns>
-        public static bool IsPointInPolygon4(PointF[] polygon, PointF point)
+        public static bool IsPointInPolygon4(PointF[] polygon, in PointF point)
         {
             bool result = false;
             int j = polygon.Count() - 1;

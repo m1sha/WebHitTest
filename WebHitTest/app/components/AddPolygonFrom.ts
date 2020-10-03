@@ -1,9 +1,10 @@
 ﻿import Vue from "vue";
-import Point from "../Point";
+import Point from "../tools/Point";
+import Polygon from '../tools/Polygon';
 export default Vue.extend({
   template: `
 <form class="needs-validation" novalidate>
-  <div class="form-row" v-for="(point, i) in points">
+  <div class="form-row" v-for="(point, i) in polygon.points">
     <div class="col-md-5 mb-5">
       <label :for="'validationCustom'+i+'1'">X{{i}}</label>
       <input type="number" class="form-control" :id="'validationCustom'+i+'1'" placeholder="X" value="0" v-model.number="point.x" required :min="-xValue" :max="xValue" @keyup="xKeyup($event, i)">
@@ -18,7 +19,7 @@ export default Vue.extend({
         Looks good!
       </div>
     </div>
-    <div v-show="points.length > 3" class="col-md-2 mb-2" style="padding-top: 2rem">
+    <div v-show="polygon.points.length > 3" class="col-md-2 mb-2" style="padding-top: 2rem">
       <button class="btn btn-danger" type="button" @click="remove(i)"><i class="fas fa-ban"></i></button>
     </div>
   </div>
@@ -30,7 +31,7 @@ export default Vue.extend({
 
   data() {
     return {
-      points: []
+      polygon: new Polygon()
     }
   },
 
@@ -40,15 +41,16 @@ export default Vue.extend({
 
   methods: {
     createPolygon() {
-      this.$store.dispatch("createPolygon", this.points)
+      const polygon =  this.polygon.clone()
+      this.$store.dispatch("createPolygon", polygon.points)
     },
 
     addRow() {
-      this.points.push(new Point(0, 0))
+      this.polygon.add(new Point(0, 0))
     },
 
     remove(i: number) {
-      if (this.points.length <= 3) {
+      if (this.polygon.points.length <= 3) {
         return
       }
 
@@ -56,7 +58,7 @@ export default Vue.extend({
         return
       }
 
-      this.points.splice(i, 1)
+      this.polygon.remove(i)
     },
 
     cancel() {
@@ -68,25 +70,25 @@ export default Vue.extend({
     },
 
     clear() {
-      this.points = [
+      this.polygon = new Polygon([
         new Point(0, 0),
         new Point(0, 0),
         new Point(0, 0)
-      ]
+      ])
     },
 
     xKeyup(e: any, i: number) {
       const input = e.target as HTMLInputElement
       const viewport = this.$store.getters.viewport
       const value = parseFloat(input.value)
-      this.points[i].x = !value || isNaN(value)? 0: this.getValidValue(value, viewport.center.x, -viewport.center.x)
+      this.polygon.points[i].x = !value || isNaN(value)? 0: this.getValidValue(value, viewport.center.x, -viewport.center.x)
     },
 
     yKeyup(e: any, i: number) {
       const input = e.target as HTMLInputElement
       const viewport = this.$store.getters.viewport
       const value = parseFloat(input.value)
-      this.points[i].y = !value || isNaN(value) ? 0 : this.getValidValue(value, viewport.center.y, -viewport.center.y)
+      this.polygon.points[i].y = !value || isNaN(value) ? 0 : this.getValidValue(value, viewport.center.y, -viewport.center.y)
     },
 
     getValidValue(value: number, max: number, min: number): number {

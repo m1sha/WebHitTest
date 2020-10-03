@@ -7,6 +7,10 @@
     return "#000000"
   }
 
+  static get TempColor(): string {
+    return "#2e2e2e"
+  }
+
   static get CrossBackgroundColor(): string {
     return "#f0f0f0"
   }

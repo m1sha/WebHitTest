@@ -1,5 +1,5 @@
 ﻿import Vue from "vue"
-import { DrawMode } from "../DrawMode"
+import { DrawMode } from "../tools/DrawMode"
 export default Vue.extend({
   template: `
 <div class="menu">

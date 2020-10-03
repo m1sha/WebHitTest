@@ -1,16 +1,21 @@
 ﻿import Vue from "vue";
 import Vuex from "vuex";
 import axios from "axios"
-import Point from "../Point";
+import Point from "../tools/Point";
 import Graphic from "../tools/Graphic";
-import { DrawMode } from "../DrawMode";
-import Viewport from "../Viewport";
+import { CommandDispetcher } from '../tools/CommandDispetcher';
+import { DrawMode } from "../tools/DrawMode";
+import Viewport from "../tools/Viewport";
+import Shape from '../tools/Shape';
+
 Vue.use(Vuex);
 
 const store = new Vuex.Store({
   state: {
-    points: [],
+    shapes: [],
+    tempShape: null as Shape,
     graphic: null as Graphic,
+    commandDispetcher: null as CommandDispetcher,
     isPointDetect: null as boolean,
     drawMode: DrawMode.SELECT_POINT_MODE,
     viewport: null as Viewport
@@ -27,39 +32,52 @@ const store = new Vuex.Store({
       state.graphic = new Graphic(canvas)
       state.graphic.clear()
       state.viewport = state.graphic.viewport
+      state.commandDispetcher = new CommandDispetcher()
     },
 
     createPolygon({ state, commit }, points: Point[]) {
-      state.points = [...points]
-      state.graphic.clear()
-      state.graphic.strokePolygon(state.points)
+      state.shapes.push(new Shape(points))
+      state.graphic.clear(state.shapes)
     },
 
-    clearPoints({ state, commit }) {
-      state.points = []
+    drawPath({ state, commit }, points: Point[]) {
+      state.tempShape = new Shape(points)
+      state.graphic.clear(state.shapes)
+      state.graphic.drawPath(points)
     },
 
-    isPointInPolygone({ state, commit }, point: Point) {
-      axios
-        .post("api/Graphic/IsPointInPolygone", {
-          polygon: state.points,
-          bounds: state.viewport.bounds,
-          point: new Point(point.x - state.viewport.center.x, state.viewport.height - point.y - state.viewport.center.y)
-        })
-        .then((r: any) => {
+    restore({ state, commit }) {
+      state.tempShape = null
+      state.graphic.clear(state.shapes)
+    },
+
+    clearShapes({ state, commit }) {
+      state.shapes = []
+    },
+
+    async isPointInPolygone({ state, commit }, point: Point) {
+      state.graphic.clear(state.shapes)
+      for (var i = state.shapes.length - 1; i >= 0 ; i--) {
+        const shape = state.shapes[i] as Shape
+        try {
+          const r = await axios
+            .post("api/Graphic/IsPointInPolygone", {
+              polygon: shape.polygon,
+              bounds: state.viewport.bounds,
+              point: new Point(point.x - state.viewport.center.x, state.viewport.height - point.y - state.viewport.center.y)
+            })
           const result = r.data as boolean;
           commit("pointDetected", result)
-          state.graphic.clear()
           if (result) {
-            state.graphic.fillPolygon(state.points)
-            return
+            state.graphic.fillPolygon(shape.polygon)
+            break
           }
-          state.graphic.strokePolygon(state.points)
-        }).catch((e: any) => {
+          state.graphic.strokePolygon(shape.polygon)
+        } catch (e) {
           commit("pointDetected", false)
-          state.graphic.clear()
-          state.graphic.strokePolygon(state.points)
-        })
+          state.graphic.strokePolygon(shape.polygon)
+        }
+      }
     },
 
     setDrawMode({ state, commit }, value: number) {
@@ -67,14 +85,15 @@ const store = new Vuex.Store({
     },
 
     erase({ state, commit }) {
+      state.shapes = []
       state.graphic.clear()
     }
   },
 
   getters: {
-    points: state => state.points,
     drawMode: state => state.drawMode,
     viewport: state => state.viewport,
+    commandDispetcher: state => state.commandDispetcher
   }
 });
 
