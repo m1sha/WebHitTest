@@ -1,8 +1,8 @@
 ﻿import Vue from "vue"
 import { CommandDispetcher, Events } from '../tools/CommandDispetcher'
-import Point from "../tools/Point"
-import PolygonBuilder from '../tools/PolygonBuilder'
-import Viewport from '../tools/Viewport'
+import Point from "../tools/primitive/Point"
+import PolygonBuilder from '../tools/builders/PolygonBuilder'
+import Viewport from '../tools/primitive/Viewport'
 export default Vue.extend({
   template: `
 <div>

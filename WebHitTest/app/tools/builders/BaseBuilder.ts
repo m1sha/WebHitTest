@@ -1,6 +1,6 @@
-﻿import Point from './Point';
+﻿import Point from '../primitive/Point';
 
-export default abstract class PathBuilder {
+export default abstract class BaseBuilder {
   protected points: Point[]
 
   constructor() {
@@ -8,11 +8,7 @@ export default abstract class PathBuilder {
   }
 
   addPoint(point: Point, center: Point = null) {
-    if (!center)
-      this.points.push(point)
-    else
-      this.points.push(point.add(center))
-
+    this.points.push(center ? point.add(center) : point)
     return this
   }
 
@@ -29,7 +25,6 @@ export default abstract class PathBuilder {
   }
 
   abstract build(): Path2D
-
 
   toPoints(): Point[] {
     return this.points

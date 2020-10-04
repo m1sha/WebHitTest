@@ -1,6 +1,6 @@
-﻿import PathBuilder from './PathBuilder'
+﻿import BaseBuilder from './BaseBuilder'
 
-export default class LineBuilder extends PathBuilder {
+export default class LineBuilder extends BaseBuilder {
   build(): Path2D {
     const result = new Path2D()
     if (this.points.length < 2) {

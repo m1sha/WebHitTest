@@ -1,6 +1,6 @@
-﻿import PathBuilder from './PathBuilder';
+﻿import BaseBuilder from './BaseBuilder';
 
-export default class PolygonBuilder extends PathBuilder {
+export default class PolygonBuilder extends BaseBuilder {
 
   isClosePath: boolean
 

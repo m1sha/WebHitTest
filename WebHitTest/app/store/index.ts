@@ -1,12 +1,12 @@
 ﻿import Vue from "vue";
 import Vuex from "vuex";
 import axios from "axios"
-import Point from "../tools/Point";
+import Point from "../tools/primitive/Point";
 import Graphic from "../tools/Graphic";
 import { CommandDispetcher } from '../tools/CommandDispetcher';
 import { DrawMode } from "../tools/DrawMode";
-import Viewport from "../tools/Viewport";
-import Shape from '../tools/Shape';
+import Viewport from "../tools/primitive/Viewport";
+import Shape from '../tools/primitive/Shape';
 
 Vue.use(Vuex);
 
@@ -57,7 +57,7 @@ const store = new Vuex.Store({
 
     async isPointInPolygone({ state, commit }, point: Point) {
       state.graphic.clear(state.shapes)
-      for (var i = state.shapes.length - 1; i >= 0 ; i--) {
+      for (let i = state.shapes.length - 1; i >= 0 ; i--) {
         const shape = state.shapes[i] as Shape
         try {
           const r = await axios
@@ -68,14 +68,13 @@ const store = new Vuex.Store({
             })
           const result = r.data as boolean;
           commit("pointDetected", result)
+          
           if (result) {
-            state.graphic.fillPolygon(shape.polygon)
+            state.graphic.selectShape(shape)
             break
           }
-          state.graphic.strokePolygon(shape.polygon)
         } catch (e) {
           commit("pointDetected", false)
-          state.graphic.strokePolygon(shape.polygon)
         }
       }
     },

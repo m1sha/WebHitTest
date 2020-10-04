@@ -19,7 +19,11 @@
     return "#1fdfdf"
   }
 
-  static get PolygonSelectedColor(): string {
-    return "#afcfdf"
+  static get PolygonBackgroundColor(): string {
+    return "#f0f1f4"
+  }
+
+  static get FrameSelectColor(): string {
+    return "#535353"
   }
 }

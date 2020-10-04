@@ -1,6 +1,6 @@
 ﻿import Vue from "vue";
-import Point from "../tools/Point";
-import Polygon from '../tools/Polygon';
+import Point from "../tools/primitive/Point";
+import Polygon from '../tools/primitive/Polygon';
 export default Vue.extend({
   template: `
 <form class="needs-validation" novalidate>
