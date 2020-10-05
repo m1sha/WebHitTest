@@ -36,12 +36,12 @@ const store = new Vuex.Store({
     },
 
     createPolygon({ state, commit }, points: Point[]) {
-      state.shapes.push(new Shape(points))
+      state.shapes.push(new Shape(state.viewport, points))
       state.graphic.clear(state.shapes)
     },
 
     drawPath({ state, commit }, points: Point[]) {
-      state.tempShape = new Shape(points)
+      state.tempShape = new Shape(state.viewport, points)
       state.graphic.clear(state.shapes)
       state.graphic.drawPath(points)
     },
@@ -64,7 +64,7 @@ const store = new Vuex.Store({
             .post("api/Graphic/IsPointInPolygone", {
               polygon: shape.polygon,
               bounds: state.viewport.bounds,
-              point: new Point(point.x - state.viewport.center.x, state.viewport.height - point.y - state.viewport.center.y)
+              point: point
             })
           const result = r.data as boolean;
           commit("pointDetected", result)

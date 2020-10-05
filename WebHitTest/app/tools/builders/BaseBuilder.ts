@@ -7,14 +7,14 @@ export default abstract class BaseBuilder {
     this.points = []
   }
 
-  addPoint(point: Point, center: Point = null) {
-    this.points.push(center ? point.add(center) : point)
+  addPoint(point: Point) {
+    this.points.push(point)
     return this
   }
 
-  addPointBulk(points: Point[], center: Point = null) {
+  addPointBulk(points: Point[]) {
     for (var i = 0; i < points.length; i++) {
-      this.addPoint(points[i], center)
+      this.addPoint(points[i])
     }
 
     return this

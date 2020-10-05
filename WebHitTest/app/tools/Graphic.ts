@@ -5,6 +5,7 @@ import LineBuilder from './builders/LineBuilder'
 import PolygonBuilder from './builders/PolygonBuilder'
 import Shape from './primitive/Shape'
 import RectBuilder from './builders/RectBuilder'
+import Coord from './Coord'
 export default class Graphic {
 
   private ctx: CanvasRenderingContext2D
@@ -26,7 +27,7 @@ export default class Graphic {
 
   drawPath(points: Point[]) {
     const path = new PolygonBuilder()
-      .addPointBulk(points, this._viewport.center)
+      .addPointBulk(points.map(p => Coord.toScreen(p, this._viewport)))
       .build()
 
     this.ctx.strokeStyle = Colors.TempColor
@@ -36,7 +37,7 @@ export default class Graphic {
   }
 
   selectShape(shape: Shape) {
-    const rect = shape.getBounds(this._viewport)
+    const rect = shape.getBounds()
     const path = new RectBuilder(rect)
       .build()
 
@@ -104,13 +105,13 @@ export default class Graphic {
       throw new Error("Through less than 3 points impossible to create polygon")
 
     return new PolygonBuilder(true)
-      .addPointBulk(points, this._viewport.center)
+      .addPointBulk(points.map(p => Coord.toScreen(p, this._viewport)))
       .build()
   }
 
   private drawLine(p1: Point, p2: Point, color: string) {
     const line = new LineBuilder()
-      .addPointBulk([p1, p2], this._viewport.center)
+      .addPointBulk([p1, p2].map(p => Coord.toScreen(p, this._viewport)))
       .build()
 
     this.ctx.strokeStyle = color

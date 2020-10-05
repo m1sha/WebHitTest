@@ -3,6 +3,7 @@ import { CommandDispetcher, Events } from '../tools/CommandDispetcher'
 import Point from "../tools/primitive/Point"
 import PolygonBuilder from '../tools/builders/PolygonBuilder'
 import Viewport from '../tools/primitive/Viewport'
+import Coord from '../tools/Coord'
 export default Vue.extend({
   template: `
 <div>
@@ -35,7 +36,7 @@ export default Vue.extend({
   },
   methods: {
     isPointInPolygone(e: MouseEvent) {
-      this.$store.dispatch("isPointInPolygone", new Point(e.offsetX, e.offsetY))
+      this.$store.dispatch("isPointInPolygone", Coord.fromScreen(e.offsetX, e.offsetY, this.viewport))
     },
 
     startDrawPolygon(e: MouseEvent) {
@@ -43,9 +44,8 @@ export default Vue.extend({
         return
       }
 
-      const viewport = this.viewport
       this.polygonBuilder = new PolygonBuilder()
-      this.polygonBuilder.addPoint(new Point(e.offsetX - viewport.center.x, viewport.height -  e.offsetY - viewport.center.y))
+      this.polygonBuilder.addPoint(Coord.fromScreen(e.offsetX, e.offsetY, this.viewport))
       this.isDrawing = true
     },
 
@@ -59,8 +59,7 @@ export default Vue.extend({
         this.polygonBuilder.remove(count - 1)
       }
 
-      const viewport = this.viewport
-      this.polygonBuilder.addPoint(new Point(e.offsetX - viewport.center.x, viewport.height - e.offsetY - viewport.center.y))
+      this.polygonBuilder.addPoint(Coord.fromScreen(e.offsetX, e.offsetY, this.viewport))
       this.$store.dispatch("drawPath", this.polygonBuilder.toPoints())
     },
 
@@ -69,8 +68,7 @@ export default Vue.extend({
         return
       }
 
-      const viewport = this.viewport
-      const point = new Point(e.offsetX - viewport.center.x, viewport.height - e.offsetY - viewport.center.y)
+      const point = Coord.fromScreen(e.offsetX, e.offsetY, this.viewport)
       const count = this.polygonBuilder.points.length
       const points = this.polygonBuilder.points.filter(p => (point.x >= p.x - 5 && point.x <= p.x + 5) && (point.y >= p.y - 5 && point.y <= p.y + 5))
       const resultPoint = (count > 1 && points.length > 1 && confirm("Замкунить многоугольник?")) ? points[0] : point

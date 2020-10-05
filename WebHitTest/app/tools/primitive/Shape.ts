@@ -1,23 +1,26 @@
-﻿import Point from './Point';
+﻿import Coord from '../Coord';
+import Point from './Point';
 import Rect from './Rect';
 import Viewport from './Viewport';
 
 export default class Shape {
   polygon: Point[]
+  viewport: Viewport
 
-  constructor(points: Point[] = null) {
+  constructor(viewport: Viewport, points: Point[] = null) {
     this.polygon = points
+    this.viewport = viewport
   }
 
-  getBounds(viewport: Viewport): Rect {
+  getBounds(): Rect {
     let
-      minX = viewport.width,
+      minX = this.viewport.width,
       maxX = 0,
-      minY = viewport.height,
+      minY = this.viewport.height,
       maxY = 0
 
     for (var i = 0; i < this.polygon.length; i++) {
-      const point = this.polygon[i].add(viewport.center)
+      const point = Coord.toScreen(this.polygon[i], this.viewport)
 
       if (minX > point.x)
         minX = point.x
