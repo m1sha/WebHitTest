@@ -5,22 +5,24 @@ export class CommandDispetcher {
 
   constructor() {
     this.commands = new CommandCollection()
-      .add(new Command(DrawMode.SELECT_POINT_MODE, "isPointInPolygone", Events.MOUSE_UP, MouseButtons.LEFT))
-      .add(new Command(DrawMode.POLYGON_MODE, "addPolygonPointOrFinish", Events.MOUSE_UP, MouseButtons.LEFT))
-      .add(new Command(DrawMode.POLYGON_MODE, "cancelDrawPolygon", Events.MOUSE_UP, MouseButtons.RIGHT))
-      .add(new Command(DrawMode.POLYGON_MODE, "startDrawPolygon", Events.MOUSE_DOWN, MouseButtons.LEFT))
-      .add(new Command(DrawMode.POLYGON_MODE, "drawingPolygon", Events.MOUSE_MOVE, MouseButtons.NONE))
+      .add(new Command(DrawMode.SELECT_POINT_MODE, "isPointInPolygon", Events.MOUSE_UP, new MouseEventFilter(MouseButtons.LEFT)))
+      .add(new Command(DrawMode.SELECT_POINT_MODE, "deletePolygon", Events.KEY_UP, new KeyboardEventFilter(KeyCodes.Del)))
+      .add(new Command(DrawMode.POLYGON_MODE, "addPolygonPointOrFinish", Events.MOUSE_UP, new MouseEventFilter(MouseButtons.LEFT)))
+      .add(new Command(DrawMode.POLYGON_MODE, "cancelDrawPolygon", Events.MOUSE_UP, new MouseEventFilter(MouseButtons.RIGHT)))
+      .add(new Command(DrawMode.POLYGON_MODE, "startDrawPolygon", Events.MOUSE_DOWN, new MouseEventFilter(MouseButtons.LEFT)))
+      .add(new Command(DrawMode.POLYGON_MODE, "drawingPolygon", Events.MOUSE_MOVE, new MouseEventFilter(MouseButtons.NONE)))
   }
 
-  switchCommad(eventType: string, drawMode: number, e: MouseEvent) {
-    const commands = this.findCommands(eventType, drawMode, e.which)
+  switchCommad(eventType: string, drawMode: number, e: MouseEvent | KeyboardEvent) {
+    const eventFilter = EventFilter.create(e)
+    const commands = this.findCommands(eventType, drawMode, eventFilter)
     for (var i = 0; i < commands.length; i++) {
       commands[i].action(e)
     }
   }
 
-  findCommands(eventType: string, drawMode: number, mouseButton) {
-    return this.commands.find(eventType, drawMode, mouseButton)
+  findCommands(eventType: string, drawMode: number, e: EventFilter) {
+    return this.commands.find(eventType, drawMode, e)
   }
 
   getCommandByName(name: string): Command {
@@ -32,14 +34,14 @@ export class CommandDispetcher {
 export class Command {
   name: string
   eventType: string
-  mouseButton: number
+  eventFilter: EventFilter
   drawMode: number
   action: Function
 
-  constructor(drawMode: number, name: string, eventType: string, mouseButton: number, action: Function = null) {
+  constructor(drawMode: number, name: string, eventType: string, eventFilter: EventFilter, action: Function = null) {
     this.name = name
     this.eventType = eventType
-    this.mouseButton = mouseButton
+    this.eventFilter = eventFilter
     this.drawMode = drawMode
     this.action = action
   }
@@ -61,10 +63,10 @@ export class CommandCollection {
     return this.commands.filter(p => p.name === name)[0]
   }
 
-  find(eventType: string, drawMode: number, mouseButton) {
+  find(eventType: string, drawMode: number, e: EventFilter) {
     return this.commands.filter(p => p.eventType === eventType &&
       p.drawMode === drawMode &&
-      p.mouseButton === mouseButton)
+      p.eventFilter.which === e.which)
   }
 }
 
@@ -75,8 +77,42 @@ export const MouseButtons = {
   RIGHT: 3
 }
 
+export const KeyCodes = {
+  Del: 46
+}
+
 export const Events = {
   MOUSE_UP: "onmouseup",
   MOUSE_DOWN: "onmousedown",
-  MOUSE_MOVE: "onmousemove"
+  MOUSE_MOVE: "onmousemove",
+  KEY_UP: "onkeyup"
+}
+
+export class EventFilter {
+
+  which: number
+
+  constructor() {
+    this.which = null
+  }
+
+  static create(e: MouseEvent | KeyboardEvent): EventFilter {
+    const result = new EventFilter()
+    result.which = e.which
+    return result
+  }
+}
+
+export class MouseEventFilter extends EventFilter {
+  constructor(mouseButton: number) {
+    super()
+    this.which = mouseButton
+  }
+}
+
+export class KeyboardEventFilter extends EventFilter {
+  constructor(key: number) {
+    super()
+    this.which = key
+  }
 }

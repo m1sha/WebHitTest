@@ -134,7 +134,11 @@ exports.default = _vue2.default.extend({
         canvas.onmousemove = function (e) {
             return dispetcher.switchCommad(_CommandDispetcher.Events.MOUSE_MOVE, _this.drawMode, e);
         };
-        dispetcher.getCommandByName("isPointInPolygone").action = this.isPointInPolygone;
+        window.onkeyup = function (e) {
+            return dispetcher.switchCommad(_CommandDispetcher.Events.KEY_UP, _this.drawMode, e);
+        };
+        dispetcher.getCommandByName("isPointInPolygon").action = this.isPointInPolygon;
+        dispetcher.getCommandByName("deletePolygon").action = this.deletePolygon;
         dispetcher.getCommandByName("addPolygonPointOrFinish").action = this.addPolygonPointOrFinish;
         dispetcher.getCommandByName("cancelDrawPolygon").action = this.cancelDrawPolygon;
         dispetcher.getCommandByName("startDrawPolygon").action = this.startDrawPolygon;
@@ -147,8 +151,17 @@ exports.default = _vue2.default.extend({
         };
     },
     methods: {
-        isPointInPolygone: function isPointInPolygone(e) {
+        isPointInPolygon: function isPointInPolygon(e) {
             this.$store.dispatch("isPointInPolygone", _Coord2.default.fromScreen(e.offsetX, e.offsetY, this.viewport));
+        },
+        deletePolygon: function deletePolygon() {
+            if (this.$store.getters.selectedIndex < 0) {
+                return;
+            }
+            if (!confirm("Удалить многоугольник?")) {
+                return;
+            }
+            this.$store.dispatch("deleteShape");
         },
         startDrawPolygon: function startDrawPolygon(e) {
             if (this.isDrawing) {
@@ -351,6 +364,7 @@ _vue2.default.use(_vuex2.default);
 var store = new _vuex2.default.Store({
     state: {
         shapes: [],
+        selectedIndex: -1,
         tempShape: null,
         graphic: null,
         commandDispetcher: null,
@@ -404,6 +418,7 @@ var store = new _vuex2.default.Store({
                 return (0, _tslib.__generator)(this, function (_b) {
                     switch (_b.label) {
                         case 0:
+                            state.selectedIndex = -1;
                             state.graphic.clear(state.shapes);
                             i = state.shapes.length - 1;
                             _b.label = 1;
@@ -424,6 +439,7 @@ var store = new _vuex2.default.Store({
                             commit("pointDetected", result);
                             if (result) {
                                 state.graphic.selectShape(shape);
+                                state.selectedIndex = i;
                                 return [3 /*break*/, 6];
                             }
                             return [3 /*break*/, 5];
@@ -439,6 +455,13 @@ var store = new _vuex2.default.Store({
                     }
                 });
             });
+        },
+        deleteShape: function deleteShape(_a) {
+            var state = _a.state,
+                commit = _a.commit;
+            state.shapes.splice(state.selectedIndex, 1);
+            state.selectedIndex = -1;
+            state.graphic.clear(state.shapes);
         },
         setDrawMode: function setDrawMode(_a, value) {
             var state = _a.state,
@@ -461,6 +484,9 @@ var store = new _vuex2.default.Store({
         },
         commandDispetcher: function commandDispetcher(state) {
             return state.commandDispetcher;
+        },
+        selectedIndex: function selectedIndex(state) {
+            return state.selectedIndex;
         }
     }
 });
@@ -533,22 +559,25 @@ exports.default = Colors;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.Events = exports.MouseButtons = exports.CommandCollection = exports.Command = exports.CommandDispetcher = undefined;
+exports.KeyboardEventFilter = exports.MouseEventFilter = exports.EventFilter = exports.Events = exports.KeyCodes = exports.MouseButtons = exports.CommandCollection = exports.Command = exports.CommandDispetcher = undefined;
+
+var _tslib = require("tslib");
 
 var _DrawMode = require("./DrawMode");
 
 var CommandDispetcher = /** @class */function () {
     function CommandDispetcher() {
-        this.commands = new CommandCollection().add(new Command(_DrawMode.DrawMode.SELECT_POINT_MODE, "isPointInPolygone", Events.MOUSE_UP, MouseButtons.LEFT)).add(new Command(_DrawMode.DrawMode.POLYGON_MODE, "addPolygonPointOrFinish", Events.MOUSE_UP, MouseButtons.LEFT)).add(new Command(_DrawMode.DrawMode.POLYGON_MODE, "cancelDrawPolygon", Events.MOUSE_UP, MouseButtons.RIGHT)).add(new Command(_DrawMode.DrawMode.POLYGON_MODE, "startDrawPolygon", Events.MOUSE_DOWN, MouseButtons.LEFT)).add(new Command(_DrawMode.DrawMode.POLYGON_MODE, "drawingPolygon", Events.MOUSE_MOVE, MouseButtons.NONE));
+        this.commands = new CommandCollection().add(new Command(_DrawMode.DrawMode.SELECT_POINT_MODE, "isPointInPolygon", Events.MOUSE_UP, new MouseEventFilter(MouseButtons.LEFT))).add(new Command(_DrawMode.DrawMode.SELECT_POINT_MODE, "deletePolygon", Events.KEY_UP, new KeyboardEventFilter(KeyCodes.Del))).add(new Command(_DrawMode.DrawMode.POLYGON_MODE, "addPolygonPointOrFinish", Events.MOUSE_UP, new MouseEventFilter(MouseButtons.LEFT))).add(new Command(_DrawMode.DrawMode.POLYGON_MODE, "cancelDrawPolygon", Events.MOUSE_UP, new MouseEventFilter(MouseButtons.RIGHT))).add(new Command(_DrawMode.DrawMode.POLYGON_MODE, "startDrawPolygon", Events.MOUSE_DOWN, new MouseEventFilter(MouseButtons.LEFT))).add(new Command(_DrawMode.DrawMode.POLYGON_MODE, "drawingPolygon", Events.MOUSE_MOVE, new MouseEventFilter(MouseButtons.NONE)));
     }
     CommandDispetcher.prototype.switchCommad = function (eventType, drawMode, e) {
-        var commands = this.findCommands(eventType, drawMode, e.which);
+        var eventFilter = EventFilter.create(e);
+        var commands = this.findCommands(eventType, drawMode, eventFilter);
         for (var i = 0; i < commands.length; i++) {
             commands[i].action(e);
         }
     };
-    CommandDispetcher.prototype.findCommands = function (eventType, drawMode, mouseButton) {
-        return this.commands.find(eventType, drawMode, mouseButton);
+    CommandDispetcher.prototype.findCommands = function (eventType, drawMode, e) {
+        return this.commands.find(eventType, drawMode, e);
     };
     CommandDispetcher.prototype.getCommandByName = function (name) {
         return this.commands.getByName(name);
@@ -558,13 +587,13 @@ var CommandDispetcher = /** @class */function () {
 exports.CommandDispetcher = CommandDispetcher;
 
 var Command = /** @class */function () {
-    function Command(drawMode, name, eventType, mouseButton, action) {
+    function Command(drawMode, name, eventType, eventFilter, action) {
         if (action === void 0) {
             action = null;
         }
         this.name = name;
         this.eventType = eventType;
-        this.mouseButton = mouseButton;
+        this.eventFilter = eventFilter;
         this.drawMode = drawMode;
         this.action = action;
     }
@@ -585,9 +614,9 @@ var CommandCollection = /** @class */function () {
             return p.name === name;
         })[0];
     };
-    CommandCollection.prototype.find = function (eventType, drawMode, mouseButton) {
+    CommandCollection.prototype.find = function (eventType, drawMode, e) {
         return this.commands.filter(function (p) {
-            return p.eventType === eventType && p.drawMode === drawMode && p.mouseButton === mouseButton;
+            return p.eventType === eventType && p.drawMode === drawMode && p.eventFilter.which === e.which;
         });
     };
     return CommandCollection;
@@ -599,13 +628,51 @@ var MouseButtons = exports.MouseButtons = {
     MIDDLE: 2,
     RIGHT: 3
 };
+var KeyCodes = exports.KeyCodes = {
+    Del: 46
+};
 var Events = exports.Events = {
     MOUSE_UP: "onmouseup",
     MOUSE_DOWN: "onmousedown",
-    MOUSE_MOVE: "onmousemove"
+    MOUSE_MOVE: "onmousemove",
+    KEY_UP: "onkeyup"
 };
+var EventFilter = /** @class */function () {
+    function EventFilter() {
+        this.which = null;
+    }
+    EventFilter.create = function (e) {
+        var result = new EventFilter();
+        result.which = e.which;
+        return result;
+    };
+    return EventFilter;
+}();
+exports.EventFilter = EventFilter;
 
-},{"./DrawMode":10}],9:[function(require,module,exports){
+var MouseEventFilter = /** @class */function (_super) {
+    (0, _tslib.__extends)(MouseEventFilter, _super);
+    function MouseEventFilter(mouseButton) {
+        var _this = _super.call(this) || this;
+        _this.which = mouseButton;
+        return _this;
+    }
+    return MouseEventFilter;
+}(EventFilter);
+exports.MouseEventFilter = MouseEventFilter;
+
+var KeyboardEventFilter = /** @class */function (_super) {
+    (0, _tslib.__extends)(KeyboardEventFilter, _super);
+    function KeyboardEventFilter(key) {
+        var _this = _super.call(this) || this;
+        _this.which = key;
+        return _this;
+    }
+    return KeyboardEventFilter;
+}(EventFilter);
+exports.KeyboardEventFilter = KeyboardEventFilter;
+
+},{"./DrawMode":10,"tslib":54}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {

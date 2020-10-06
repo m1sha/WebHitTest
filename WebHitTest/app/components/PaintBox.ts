@@ -1,6 +1,5 @@
 ﻿import Vue from "vue"
 import { CommandDispetcher, Events } from '../tools/CommandDispetcher'
-import Point from "../tools/primitive/Point"
 import PolygonBuilder from '../tools/builders/PolygonBuilder'
 import Viewport from '../tools/primitive/Viewport'
 import Coord from '../tools/Coord'
@@ -21,8 +20,10 @@ export default Vue.extend({
     canvas.onmousedown = e => dispetcher.switchCommad(Events.MOUSE_DOWN, this.drawMode, e)
     canvas.onmouseup = e => dispetcher.switchCommad(Events.MOUSE_UP, this.drawMode, e)
     canvas.onmousemove = e => dispetcher.switchCommad(Events.MOUSE_MOVE, this.drawMode, e)
+    window.onkeyup = e => dispetcher.switchCommad(Events.KEY_UP, this.drawMode, e)
     
-    dispetcher.getCommandByName("isPointInPolygone").action = this.isPointInPolygone
+    dispetcher.getCommandByName("isPointInPolygon").action = this.isPointInPolygon
+    dispetcher.getCommandByName("deletePolygon").action = this.deletePolygon
     dispetcher.getCommandByName("addPolygonPointOrFinish").action = this.addPolygonPointOrFinish
     dispetcher.getCommandByName("cancelDrawPolygon").action = this.cancelDrawPolygon
     dispetcher.getCommandByName("startDrawPolygon").action = this.startDrawPolygon
@@ -35,8 +36,20 @@ export default Vue.extend({
     }
   },
   methods: {
-    isPointInPolygone(e: MouseEvent) {
+    isPointInPolygon(e: MouseEvent) {
       this.$store.dispatch("isPointInPolygone", Coord.fromScreen(e.offsetX, e.offsetY, this.viewport))
+    },
+
+    deletePolygon() {
+      if (this.$store.getters.selectedIndex < 0) {
+        return
+      }
+
+      if (!confirm("Удалить многоугольник?")) {
+        return
+      }
+
+      this.$store.dispatch("deleteShape")
     },
 
     startDrawPolygon(e: MouseEvent) {

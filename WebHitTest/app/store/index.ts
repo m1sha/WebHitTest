@@ -13,6 +13,7 @@ Vue.use(Vuex);
 const store = new Vuex.Store({
   state: {
     shapes: [],
+    selectedIndex: -1,
     tempShape: null as Shape,
     graphic: null as Graphic,
     commandDispetcher: null as CommandDispetcher,
@@ -56,6 +57,7 @@ const store = new Vuex.Store({
     },
 
     async isPointInPolygone({ state, commit }, point: Point) {
+      state.selectedIndex = -1
       state.graphic.clear(state.shapes)
       for (let i = state.shapes.length - 1; i >= 0 ; i--) {
         const shape = state.shapes[i] as Shape
@@ -71,12 +73,19 @@ const store = new Vuex.Store({
           
           if (result) {
             state.graphic.selectShape(shape)
+            state.selectedIndex = i
             break
           }
         } catch (e) {
           commit("pointDetected", false)
         }
       }
+    },
+
+    deleteShape({state, commit }) {
+      state.shapes.splice(state.selectedIndex, 1)
+      state.selectedIndex = -1
+      state.graphic.clear(state.shapes)
     },
 
     setDrawMode({ state, commit }, value: number) {
@@ -92,7 +101,8 @@ const store = new Vuex.Store({
   getters: {
     drawMode: state => state.drawMode,
     viewport: state => state.viewport,
-    commandDispetcher: state => state.commandDispetcher
+    commandDispetcher: state => state.commandDispetcher,
+    selectedIndex: state => state.selectedIndex
   }
 });
 
