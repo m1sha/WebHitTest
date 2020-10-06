@@ -8,12 +8,7 @@ export default class Viewport extends Rect {
     this.center = new Point((width - x) / 2, (height - y) / 2)
   }
 
-  get bounds(): any {
-    return {
-      x: this.x,
-      y: this.y,
-      width: this.width,
-      height: this.height
-    }
+  get bounds(): Rect {
+    return new Rect (this.x, this.y, this.width, this.height)
   }
 }
